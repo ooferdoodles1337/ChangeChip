@@ -5,7 +5,7 @@ import global_variables
 
 def homography(cut, img1, img2, mask_img):
     # Initiate SIFT detector
-    sift = cv2.xfeatures2d.SIFT_create()
+    sift = cv2.SIFT_create()
     # find the keypoints and descriptors with SIFT
     kp1, des1 = sift.detectAndCompute(img1, None)
     kp2, des2 = sift.detectAndCompute(img2, None)

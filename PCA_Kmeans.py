@@ -1,6 +1,5 @@
 import numpy as np
 from numpy import savetxt
-from scipy.misc import imread, imsave, imresize
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
@@ -17,7 +16,7 @@ def get_descriptors (image1, image2, window_size, pca_dim_gray, pca_dim_rgb):
     descriptors = np.zeros((image1.shape[0],image1.shape[1], window_size * window_size))
     diff_image = cv2.absdiff(image1, image2)
     diff_image = color.rgb2gray(diff_image)
-    imsave(global_variables.output_dir  + '/diff.jpg', diff_image)
+    cv2.imwrite(global_variables.output_dir  + '/diff.jpg', diff_image)
     diff_image = np.pad(diff_image,((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
             'constant')  # default is 0
     for i in range(image1.shape[0]):
@@ -33,10 +32,10 @@ def get_descriptors (image1, image2, window_size, pca_dim_gray, pca_dim_rgb):
     diff_image_b = cv2.absdiff(image1[:, :, 2],image2[:, :, 2])
 
     if (global_variables.save_extra_stuff):
-        imsave(global_variables.output_dir + '/final_diff.jpg', cv2.absdiff(image1, image2))
-        imsave(global_variables.output_dir +'/final_diff_r.jpg', diff_image_r)
-        imsave(global_variables.output_dir + '/final_diff_g.jpg', diff_image_g)
-        imsave(global_variables.output_dir + '/final_diff_b.jpg', diff_image_b)
+        cv2.imwrite(global_variables.output_dir + '/final_diff.jpg', cv2.absdiff(image1, image2))
+        cv2.imwrite(global_variables.output_dir +'/final_diff_r.jpg', diff_image_r)
+        cv2.imwrite(global_variables.output_dir + '/final_diff_g.jpg', diff_image_g)
+        cv2.imwrite(global_variables.output_dir + '/final_diff_b.jpg', diff_image_b)
 
     diff_image_r = np.pad(diff_image_r, ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
                         'constant')  # default is 0
@@ -113,9 +112,9 @@ def compute_change_map(image1, image2, window_size=5, clusters=16, pca_dim_gray=
             palette_colored_change_map[i, j] = [255*palette[change_map[i, j]][0],255*palette[change_map[i, j]][1],255*palette[change_map[i, j]][2]]
 
     if (global_variables.save_extra_stuff):
-        imsave(global_variables.output_dir+ '/window_size_'+str(window_size)+'_pca_dim_gray'+str(pca_dim_gray)+'_pca_dim_rgb'
+        cv2.imwrite(global_variables.output_dir+ '/window_size_'+str(window_size)+'_pca_dim_gray'+str(pca_dim_gray)+'_pca_dim_rgb'
                +str(pca_dim_rgb)+'_clusters_'+  str(clusters) + '.jpg', colored_change_map)
-        imsave(global_variables.output_dir + '/PALETTE_window_size_' + str(window_size) + '_pca_dim_gray' + str(pca_dim_gray) + '_pca_dim_rgb'
+        cv2.imwrite(global_variables.output_dir + '/PALETTE_window_size_' + str(window_size) + '_pca_dim_gray' + str(pca_dim_gray) + '_pca_dim_rgb'
                + str(pca_dim_rgb) + '_clusters_' + str(clusters) + '.jpg', palette_colored_change_map)
 
     #Saving Output for later evaluation
