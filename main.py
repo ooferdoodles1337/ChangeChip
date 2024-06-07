@@ -55,66 +55,81 @@ def main(
     start_time = time.time()
 
     # read the inputs
-    image_1 = cv2.imread(input_path, 1)
-    image_2 = cv2.imread(reference_path, 1)
+    input_image = cv2.imread(input_path, 1)
+    reference_image = cv2.imread(reference_path, 1)
 
     # we need the images to be the same size. resize_factor is for increasing or decreasing further the images
     new_shape = (
-        int(resize_factor * 0.5 * (image_1.shape[1] + image_2.shape[1])),
-        int(resize_factor * 0.5 * (image_1.shape[0] + image_2.shape[0])),
+        int(resize_factor * 0.5 * (input_image.shape[1] + reference_image.shape[1])),
+        int(resize_factor * 0.5 * (input_image.shape[0] + reference_image.shape[0])),
     )
-    image_1 = cv2.resize(image_1, new_shape, interpolation=cv2.INTER_AREA)
-    image_2 = cv2.resize(image_2, new_shape, interpolation=cv2.INTER_AREA)
+    input_image = cv2.resize(input_image, new_shape, interpolation=cv2.INTER_AREA)
+    reference_image = cv2.resize(
+        reference_image, new_shape, interpolation=cv2.INTER_AREA
+    )
     global_variables.set_size(new_shape[0], new_shape[1])
     if cut:
         import crop
 
-        image_1, image_2, result_1, result_2 = crop.crop_images(image_1, image_2)
-        mask = np.zeros((result_2.shape[0], result_2.shape[1], 3), dtype=np.uint8)
-        for i in range(image_2.shape[:2][0]):
-            for j in range(image_2.shape[:2][1]):
-                if result_2[i][j] == True:
-                    mask[i][j] = [255, 255, 255]
+        input_image, mask = crop.crop_image(input_image)
+        reference_image, _ = crop.crop_image(reference_image)
+
+        if global_variables.save_extra_stuff:
+            cv2.imwrite(
+                global_variables.output_dir + "/cropped_input_image.jpg", input_image
+            )
+            cv2.imwrite(
+                global_variables.output_dir + "/cropped_reference_image.jpg",
+                reference_image,
+            )
+
         if use_homography:
-            image2_registered, mask_registered, blank_pixels = homography(
-                cut, image_1, image_2, mask
+            reference_image_registered, mask_registered, blank_pixels = homography(
+                cut, input_image, reference_image, mask
             )
         else:
-            image2_registered = image_2
-        min_width = min(image_1.shape[:2][0], image_2.shape[:2][0])
-        min_height = min(image_1.shape[:2][1], image_2.shape[:2][1])
-        for i in range(min_width):
-            for j in range(min_height):
-                if mask_registered[i][j][0] == 0 or result_1[i][j] == False:
-                    image2_registered[i][j] = 0
-                    image_1[i][j] = 0
-        cv2.imwrite(global_variables.output_dir + "/blanked_1.jpg", image_1)
-        cv2.imwrite(global_variables.output_dir + "/blanked_2.jpg", image2_registered)
+            reference_image_registered = reference_image
+
+        # min_width = min(input_image.shape[:2][0], reference_image.shape[:2][0])
+        # min_height = min(input_image.shape[:2][1], reference_image.shape[:2][1])
+
+        # for i in range(min_width):
+        #     for j in range(min_height):
+        #         if mask_registered[i][j][0]:
+        #             reference_image_registered[i][j] = 0
+        #             input_image[i][j] = 0
+        # cv2.imwrite(global_variables.output_dir + "/blanked_input_image.jpg", input_image)
+        # cv2.imwrite(
+        #     global_variables.output_dir + "/blanked_reference_image.jpg", reference_image_registered
+        # )
+        # print("--- Cropping time - %s seconds ---" % (time.time() - start_time))
     else:
         if use_homography:
-            image2_registered, mask_registered, blank_pixels = homography(
-                cut, image_1, image_2, None
+            reference_image_registered, mask_registered, blank_pixels = homography(
+                cut, input_image, reference_image, None
             )
         else:
-            image2_registered = image_2
+            reference_image_registered = reference_image
 
     if use_homography:
-        image_1[blank_pixels] = [0, 0, 0]
-        image2_registered[blank_pixels] = [0, 0, 0]
+        input_image[blank_pixels] = [0, 0, 0]
+        reference_image_registered[blank_pixels] = [0, 0, 0]
 
     if global_variables.save_extra_stuff:
-        cv2.imwrite(global_variables.output_dir + "/resized_blanked_1.jpg", image_1)
+        cv2.imwrite(global_variables.output_dir + "/resized_blanked_1.jpg", input_image)
 
     if lighting_fix:
-        # Using the histogram matching, only image2_registered is changed
-        image2_registered = light_diff_elimination(image_1, image2_registered)
+        # Using the histogram matching, only reference_image_registered is changed
+        reference_image_registered = light_diff_elimination(
+            input_image, reference_image_registered
+        )
 
-        print("--- Preprocessing time - %s seconds ---" % (time.time() - start_time))
+    print("--- Preprocessing time - %s seconds ---" % (time.time() - start_time))
 
     start_time = time.time()
     clustering_map, mse_array, size_array = compute_change_map(
-        image_1,
-        image2_registered,
+        input_image,
+        reference_image_registered,
         window_size=window_size,
         clusters=n,
         pca_dim_gray=pca_dim_gray,
