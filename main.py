@@ -145,6 +145,7 @@ def main(
     input_image = cv2.resize(input_image, new_shape, interpolation=cv2.INTER_AREA)
     b_channel, g_channel, r_channel = cv2.split(input_image)
     alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 255
+    # control output opacity
     alpha_channel[:, :] = 50
     groups = find_group_of_accepted_classes_DBSCAN(mse_array)
     for group in groups:
