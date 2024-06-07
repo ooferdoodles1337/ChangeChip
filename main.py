@@ -10,7 +10,6 @@ from PCA_Kmeans import (
     draw_combination_on_transparent_input_image,
 )
 import global_variables
-import os
 import argparse
 
 
@@ -69,26 +68,27 @@ def main(
     )
     global_variables.set_size(new_shape[0], new_shape[1])
     if cut:
-        import crop
+        pass
+        # import crop
 
-        input_image, mask = crop.crop_image(input_image)
-        reference_image, _ = crop.crop_image(reference_image)
+        # input_image, mask = crop.crop_image(input_image)
+        # reference_image, _ = crop.crop_image(reference_image)
 
-        if global_variables.save_extra_stuff:
-            cv2.imwrite(
-                global_variables.output_dir + "/cropped_input_image.jpg", input_image
-            )
-            cv2.imwrite(
-                global_variables.output_dir + "/cropped_reference_image.jpg",
-                reference_image,
-            )
+        # if global_variables.save_extra_stuff:
+        #     cv2.imwrite(
+        #         global_variables.output_dir + "/cropped_input_image.jpg", input_image
+        #     )
+        #     cv2.imwrite(
+        #         global_variables.output_dir + "/cropped_reference_image.jpg",
+        #         reference_image,
+        #     )
 
-        if use_homography:
-            reference_image_registered, mask_registered, blank_pixels = homography(
-                cut, input_image, reference_image, mask
-            )
-        else:
-            reference_image_registered = reference_image
+        # if use_homography:
+        #     reference_image_registered, mask_registered, blank_pixels = homography(
+        #         cut, input_image, reference_image, mask
+        #     )
+        # else:
+        #     reference_image_registered = reference_image
 
         # min_width = min(input_image.shape[:2][0], reference_image.shape[:2][0])
         # min_height = min(input_image.shape[:2][1], reference_image.shape[:2][1])

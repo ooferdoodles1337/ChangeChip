@@ -29,7 +29,6 @@ def light_diff_elimination_NAIVE(image_1, image_2_registered):
 
 #rgb - are the images in rgb colors of just gray?
 def light_diff_elimination(image_1, image_2_registered):
-    import imageio
     from ExactHistogramMatching.histogram_matching import ExactHistogramMatcher
     reference_histogram = ExactHistogramMatcher.get_histogram(image_1)
     new_target_img = ExactHistogramMatcher.match_image_to_histogram(image_2_registered, reference_histogram)

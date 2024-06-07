@@ -3,7 +3,7 @@ from numpy import savetxt
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
-from skimage import color
+# from skimage import color
 import global_variables
 import cv2
 import matplotlib.pyplot as plt
@@ -18,7 +18,7 @@ def get_descriptors(image_1, image_2, window_size, pca_dim_gray, pca_dim_rgb):
         (image_1.shape[0], image_1.shape[1], window_size * window_size)
     )
     diff_image = cv2.absdiff(image_1, image_2)
-    diff_image = color.rgb2gray(diff_image)
+    diff_image = cv2.cvtColor(diff_image, cv2.COLOR_BGR2GRAY)
     cv2.imwrite(global_variables.output_dir + "/diff.jpg", diff_image)
     diff_image = np.pad(
         diff_image,
