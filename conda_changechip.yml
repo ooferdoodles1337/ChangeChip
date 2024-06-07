@@ -1,4 +1,4 @@
-name: c:\Users\panta\Documents\Projects\ChangeChip\.conda
+name: changechip
 channels:
   - defaults
 dependencies:
