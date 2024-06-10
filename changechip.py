@@ -445,6 +445,7 @@ def compute_change_map(
     Returns:
         tuple: A tuple containing the change map, the mean squared error (MSE) array, and the size array.
     """
+    start_time = time.time()
     input_image, reference_image = images
     descriptors = get_descriptors(
         images,
@@ -454,11 +455,14 @@ def compute_change_map(
         debug=debug,
         output_directory=output_directory,
     )
+    print("--- Feature extraction time - %s seconds ---" % (time.time() - start_time))
     # Now we are ready for clustering!
     change_map = k_means_clustering(descriptors, clusters, input_image.shape)
+    print("--- K-means clustering time - %s seconds ---" % (time.time() - start_time))
     mse_array, size_array = clustering_to_mse_values(
         change_map, input_image, reference_image, clusters
     )
+    print("--- MSE calculation time - %s seconds ---" % (time.time() - start_time))
     sorted_indexes = np.argsort(mse_array)
     colors_array = [
         plt.cm.jet(
@@ -509,6 +513,7 @@ def compute_change_map(
         change_map,
         delimiter=",",
     )
+    print("--- Function End - %s seconds ---" % (time.time() - start_time))
     return change_map, mse_array, size_array
 
 
@@ -611,6 +616,22 @@ def detect_changes(
     pca_dim_rgb,
     debug=False,
 ):
+    """
+    Detects changes between two images using PCA-Kmeans clustering and post-processing and outputs results to output_directory.
+
+    Args:
+        images (tuple): A tuple containing the input image and the reference image.
+        output_directory (str): The directory where the output image will be saved.
+        output_alpha (int): The alpha value for the output image transparency.
+        window_size (int): The size of the sliding window used for computing change map.
+        clusters (int): The number of clusters for PCA-Kmeans clustering.
+        pca_dim_gray (int): The number of dimensions to reduce to for grayscale images.
+        pca_dim_rgb (int): The number of dimensions to reduce to for RGB images.
+        debug (bool, optional): Whether to enable debug mode. Defaults to False.
+
+    Returns:
+        None
+    """
     start_time = time.time()
     input_image, reference_image_registered = images
     clustering_map, mse_array, size_array = compute_change_map(
@@ -632,6 +653,7 @@ def detect_changes(
     alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 255
     alpha_channel[:, :] = output_alpha
     groups = find_group_of_accepted_classes_DBSCAN(mse_array, output_directory)
+
     for group in groups:
         transparent_input_image = cv2.merge(
             (b_channel, g_channel, r_channel, alpha_channel)
@@ -648,7 +670,7 @@ def detect_changes(
 
 def pipeline(
     images,
-    output_directory,
+    output_directory="output",
     resize_factor=1.0,
     output_alpha=50,
     window_size=5,
@@ -657,6 +679,23 @@ def pipeline(
     pca_dim_rgb=9,
     debug=False,
 ):
+    """
+    Process a series of images to detect changes and generate an output image.
+
+    Args:
+        images (list): A list of input images to process.
+        output_directory (str, optional): The directory to save the output image. Defaults to "output".
+        resize_factor (float, optional): The factor by which to resize the images. Defaults to 1.0.
+        output_alpha (int, optional): The alpha value for the output image. Defaults to 50.
+        window_size (int, optional): The size of the sliding window for change detection. Defaults to 5.
+        clusters (int, optional): The number of clusters for color quantization. Defaults to 16.
+        pca_dim_gray (int, optional): The number of dimensions to keep for grayscale PCA. Defaults to 3.
+        pca_dim_rgb (int, optional): The number of dimensions to keep for RGB PCA. Defaults to 9.
+        debug (bool, optional): Whether to enable debug mode. Defaults to False.
+
+    Returns:
+        numpy.ndarray: The output image.
+    """
     os.makedirs(output_directory, exist_ok=True)
     preprocessed_images = preprocess_images(
         images,
@@ -675,10 +714,3 @@ def pipeline(
         debug=debug,
     )
     return cv2.imread(os.path.join(output_directory, "output.png"))
-
-
-# images = (
-#     cv2.imread("tests/test_data/input.jpg"),
-#     cv2.imread("tests/test_data/reference.jpg"),
-# )
-# output = pipeline(images, "example_output", resize_factor=0.5)
