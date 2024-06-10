@@ -3,7 +3,6 @@ from numpy import savetxt
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
 from sklearn.decomposition import PCA
-# from skimage import color
 import global_variables
 import cv2
 import matplotlib.pyplot as plt
