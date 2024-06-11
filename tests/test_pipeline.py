@@ -16,7 +16,8 @@ class TestPipeline(unittest.TestCase):
             cv2.imread(os.path.join("tests", "test_data", "input.jpg")),
             cv2.imread(os.path.join("tests", "test_data", "reference.jpg")),
         )
-        output = pipeline(images, "example_output", resize_factor=0.5, debug=True)
+        output = pipeline(images, resize_factor=0.5)
+        cv2.imwrite(os.path.join("tests", "test_data", "test_outputs", "output.png"), output)
         self.assertIsNotNone(output)
         self.assertIsInstance(output, np.ndarray)
 

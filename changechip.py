@@ -272,6 +272,23 @@ def get_descriptors(
     debug=False,
     output_directory=None,
 ):
+    """
+    Compute descriptors for input images using sliding window technique and PCA.
+
+    Args:
+        images (tuple): A tuple containing the input image and reference image.
+        window_size (int): The size of the sliding window.
+        pca_dim_gray (int): The number of dimensions to keep for grayscale PCA.
+        pca_dim_rgb (int): The number of dimensions to keep for RGB PCA.
+        debug (bool, optional): Whether to enable debug mode. Defaults to False.
+        output_directory (str, optional): The directory to save debug images. Required if debug is True.
+
+    Returns:
+        numpy.ndarray: The computed descriptors.
+
+    Raises:
+        AssertionError: If debug is True but output_directory is not provided.
+    """
     input_image, reference_image = images
 
     diff_image_gray = cv2.cvtColor(
@@ -425,12 +442,12 @@ def clustering_to_mse_values(change_map, input_image, reference_image, n):
 
 def compute_change_map(
     images,
-    output_directory,
     window_size,
     clusters,
     pca_dim_gray,
     pca_dim_rgb,
     debug=False,
+    output_directory=None,
 ):
     """
     Computes the change map for a pair of input images.
@@ -504,25 +521,28 @@ def compute_change_map(
             palette_colored_change_map_flat,
         )
 
-    # Saving Output for later evaluation
-    np.savetxt(
-        os.path.join(output_directory, "clustering_data.csv"),
-        change_map,
-        delimiter=",",
-    )
+    if debug: 
+        assert output_directory is not None, "Output directory must be provided"
+        # Saving Output for later evaluation
+        np.savetxt(
+            os.path.join(output_directory, "clustering_data.csv"),
+            change_map,
+            delimiter=",",
+        )
     return change_map, mse_array, size_array
 
 
 # selects the classes to be shown to the user as 'changes'.
 # this selection is done by an MSE heuristic using DBSCAN clustering, to seperate the highest mse-valued classes from the others.
 # the eps density parameter of DBSCAN might differ from system to system
-def find_group_of_accepted_classes_DBSCAN(MSE_array, output_directory):
+def find_group_of_accepted_classes_DBSCAN(MSE_array, debug=False, output_directory=None):
     """
     Finds the group of accepted classes using the DBSCAN algorithm.
 
     Parameters:
     - MSE_array (list): A list of mean squared error values.
-    - output_directory (str): The directory where the output files will be saved.
+    - debug (bool): Flag indicating whether to enable debug mode or not. Default is False.
+    - output_directory (str): The directory where the output files will be saved. Default is None.
 
     Returns:
     - accepted_classes (list): A list of indices of the accepted classes.
@@ -552,24 +572,27 @@ def find_group_of_accepted_classes_DBSCAN(MSE_array, output_directory):
     min_class = np.argmin(centers)
     accepted_classes = np.where(clustering.labels_ != min_class)[0]
 
-    plt.figure()
-    plt.xlabel("Index")
-    plt.ylabel("MSE")
-    plt.scatter(range(len(MSE_array)), MSE_array, c="red")
-    # print(accepted_classes)
-    # print(np.array(MSE_array)[np.array(accepted_classes)])
-    plt.scatter(
-        accepted_classes[:], np.array(MSE_array)[np.array(accepted_classes)], c="blue"
-    )
-    plt.title("K Mean Classification")
-    plt.savefig(os.path.join(output_directory, "mse.png"))
+    if debug:
+        assert output_directory is not None, "Output directory must be provided"
+        plt.figure()
+        plt.xlabel("Index")
+        plt.ylabel("MSE")
+        plt.scatter(range(len(MSE_array)), MSE_array, c="red")
+        plt.scatter(
+            accepted_classes[:],
+            np.array(MSE_array)[np.array(accepted_classes)],
+            c="blue",
+        )
+        plt.title("K Mean Classification")
 
-    # save output for later evaluation
-    np.savetxt(
-        os.path.join(output_directory, "accepted_classes.csv"),
-        accepted_classes,
-        delimiter=",",
-    )
+        plt.savefig(os.path.join(output_directory, "mse.png"))
+
+        # save output for later evaluation
+        np.savetxt(
+            os.path.join(output_directory, "accepted_classes.csv"),
+            accepted_classes,
+            delimiter=",",
+        )
     return [accepted_classes]
 
 
@@ -606,13 +629,13 @@ def draw_combination_on_transparent_input_image(
 
 def detect_changes(
     images,
-    output_directory,
     output_alpha,
     window_size,
     clusters,
     pca_dim_gray,
     pca_dim_rgb,
     debug=False,
+    output_directory=None,
 ):
     """
     Detects changes between two images using PCA-Kmeans clustering and post-processing and outputs results to output_directory.
@@ -628,18 +651,18 @@ def detect_changes(
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
 
     Returns:
-        None
+        result (numpy.ndarray): The output image with detected changes.
     """
     start_time = time.time()
     input_image, _ = images
     clustering_map, mse_array, _ = compute_change_map(
         images,
-        output_directory,
         window_size=window_size,
         clusters=clusters,
         pca_dim_gray=pca_dim_gray,
         pca_dim_rgb=pca_dim_rgb,
         debug=debug,
+        output_directory=output_directory,
     )
 
     clustering = [[] for _ in range(clusters)]
@@ -659,13 +682,13 @@ def detect_changes(
         result = draw_combination_on_transparent_input_image(
             mse_array, clustering, group, transparent_input_image
         )
-        cv2.imwrite(os.path.join(output_directory, "output.png"), result)
+
     print("--- Detect Changes time - %s seconds ---" % (time.time() - start_time))
+    return result
 
 
 def pipeline(
     images,
-    output_directory="output",
     resize_factor=1.0,
     output_alpha=50,
     window_size=5,
@@ -673,6 +696,7 @@ def pipeline(
     pca_dim_gray=3,
     pca_dim_rgb=9,
     debug=False,
+    output_directory=None,
 ):
     """
     Process a series of images to detect changes and generate an output image.
@@ -691,21 +715,24 @@ def pipeline(
     Returns:
         numpy.ndarray: The output image.
     """
-    os.makedirs(output_directory, exist_ok=True)
+    if output_directory:
+        os.makedirs(output_directory, exist_ok=True)
+
     preprocessed_images = preprocess_images(
         images,
         resize_factor=resize_factor,
         debug=debug,
         output_directory=output_directory,
     )
-    detect_changes(
+    result = detect_changes(
         preprocessed_images,
-        output_directory=output_directory,
         output_alpha=output_alpha,
         window_size=window_size,
         clusters=clusters,
         pca_dim_gray=pca_dim_gray,
         pca_dim_rgb=pca_dim_rgb,
         debug=debug,
+        output_directory=output_directory
     )
-    return cv2.imread(os.path.join(output_directory, "output.png"))
+
+    return result
