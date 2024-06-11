@@ -536,102 +536,6 @@ def clustering_to_mse_values(change_map, input_image, reference_image, n):
     return normalized_mse.tolist(), size.tolist()
 
 
-# def compute_change_map(
-#     images,
-#     output_directory,
-#     window_size,
-#     clusters,
-#     pca_dim_gray,
-#     pca_dim_rgb,
-#     debug=False,
-# ):
-#     """
-#     Computes the change map for a pair of input images.
-
-#     Args:
-#         images (tuple): A tuple containing the input image and the reference image.
-#         output_directory (str): The directory where the output files will be saved.
-#         window_size (int): The size of the sliding window used for feature extraction.
-#         clusters (int): The number of clusters for k-means clustering.
-#         pca_dim_gray (int): The number of dimensions to reduce the gray channel to using PCA.
-#         pca_dim_rgb (int): The number of dimensions to reduce the RGB channels to using PCA.
-#         debug (bool, optional): Whether to enable debug mode. Defaults to False.
-
-#     Returns:
-#         tuple: A tuple containing the change map, the mean squared error (MSE) array, and the size array.
-#     """
-#     start_time = time.time()
-#     input_image, reference_image = images
-#     descriptors = get_descriptors(
-#         images,
-#         window_size,
-#         pca_dim_gray,
-#         pca_dim_rgb,
-#         debug=debug,
-#         output_directory=output_directory,
-#     )
-#     print("--- Feature extraction time - %s seconds ---" % (time.time() - start_time))
-#     # Now we are ready for clustering!
-#     change_map = k_means_clustering(descriptors, clusters, input_image.shape)
-#     print("--- K-means clustering time - %s seconds ---" % (time.time() - start_time))
-#     mse_array, size_array = clustering_to_mse_values(
-#         change_map, input_image, reference_image, clusters
-#     )
-#     print("--- MSE calculation time - %s seconds ---" % (time.time() - start_time))
-#     sorted_indexes = np.argsort(mse_array)
-#     colors_array = [
-#         plt.cm.jet(
-#             float(np.argwhere(sorted_indexes == class_).flatten()[0]) / (clusters - 1)
-#         )
-#         for class_ in range(clusters)
-#     ]
-#     colored_change_map = np.zeros(
-#         (change_map.shape[0], change_map.shape[1], 3), np.uint8
-#     )
-#     palette_colored_change_map = np.zeros(
-#         (change_map.shape[0], change_map.shape[1], 3), np.uint8
-#     )
-#     palette = sns.color_palette("Paired", clusters)
-#     for i in range(change_map.shape[0]):
-#         for j in range(change_map.shape[1]):
-#             colored_change_map[i, j] = (
-#                 255 * colors_array[change_map[i, j]][0],
-#                 255 * colors_array[change_map[i, j]][1],
-#                 255 * colors_array[change_map[i, j]][2],
-#             )
-#             palette_colored_change_map[i, j] = [
-#                 255 * palette[change_map[i, j]][0],
-#                 255 * palette[change_map[i, j]][1],
-#                 255 * palette[change_map[i, j]][2],
-#             ]
-
-#     if debug:
-#         assert output_directory is not None, "Output directory must be provided"
-#         cv2.imwrite(
-#             os.path.join(
-#                 output_directory,
-#                 f"window_size_{window_size}_pca_dim_gray{pca_dim_gray}_pca_dim_rgb{pca_dim_rgb}_clusters_{clusters}.jpg",
-#             ),
-#             colored_change_map,
-#         )
-#         cv2.imwrite(
-#             os.path.join(
-#                 output_directory,
-#                 f"PALETTE_window_size_{window_size}_pca_dim_gray{pca_dim_gray}_pca_dim_rgb{pca_dim_rgb}_clusters_{clusters}.jpg",
-#             ),
-#             palette_colored_change_map,
-#         )
-
-#     # Saving Output for later evaluation
-#     np.savetxt(
-#         os.path.join(output_directory, "clustering_data.csv"),
-#         change_map,
-#         delimiter=",",
-#     )
-#     print("--- Function End - %s seconds ---" % (time.time() - start_time))
-#     return change_map, mse_array, size_array
-
-
 def compute_change_map(
     images,
     output_directory,
@@ -772,7 +676,6 @@ def find_group_of_accepted_classes_DBSCAN(MSE_array, output_directory):
     #     if clustering.labels_[i] != min_class:
     #         accepted_classes.append(i)
 
-
     plt.figure()
     plt.xlabel("Index")
     plt.ylabel("MSE")
@@ -852,8 +755,8 @@ def detect_changes(
         None
     """
     start_time = time.time()
-    input_image, reference_image_registered = images
-    clustering_map, mse_array, size_array = compute_change_map(
+    input_image, _ = images
+    clustering_map, mse_array, _ = compute_change_map(
         images,
         output_directory,
         window_size=window_size,
@@ -881,10 +784,7 @@ def detect_changes(
             mse_array, clustering, group, transparent_input_image
         )
         cv2.imwrite(os.path.join(output_directory, "output.png"), result)
-    print(
-        "--- PCA-Kmeans + Post-processing time - %s seconds ---"
-        % (time.time() - start_time)
-    )
+    print("--- Detect Changes time - %s seconds ---" % (time.time() - start_time))
 
 
 def pipeline(
