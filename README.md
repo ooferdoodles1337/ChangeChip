@@ -9,19 +9,18 @@ The workflow of *ChangeChip* is presented as follows:
 
 <img align="center" width="250" height="" src="assets/workflow.PNG">
 
-## Requirements:
+## Installation:
 - Create a conda environment with python 3.11
 ```
 conda create --name changechip python=3.11
 conda activate changechip
 ```
 
-- install requirements
+- Install requirements
 ```
 pip install -r requirements.txt
 ```
 
-```
 ## Running:
 
 not implemented yet
