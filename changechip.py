@@ -1,12 +1,13 @@
+import os
 import cv2
 import numpy as np
-import os
-from skimage.exposure import match_histograms
 
+from skimage.exposure import match_histograms
 from sklearn.cluster import KMeans, DBSCAN
 from sklearn.decomposition import PCA
 
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import seaborn as sns
 
 import time
@@ -263,6 +264,119 @@ def descriptors_to_pca(descriptors, pca_target_dim, window_size, shape):
     return FVS
 
 
+# def get_descriptors(
+#     images,
+#     window_size,
+#     pca_dim_gray,
+#     pca_dim_rgb,
+#     debug=False,
+#     output_directory=None,
+# ):
+#     """
+#     Compute descriptors for change detection between input_image and reference_image.
+
+#     Args:
+#         images (tuple): A tuple containing the input image and reference image as numpy arrays.
+#         window_size (int): The size of the sliding window.
+#         pca_dim_gray (int): The number of principal components to keep for grayscale difference.
+#         pca_dim_rgb (int): The number of principal components to keep for RGB difference.
+#         debug (bool, optional): Whether to save debug images. Defaults to False.
+#         output_directory (str, optional): The directory to save debug images. Defaults to None.
+
+#     Returns:
+#         numpy.ndarray: The computed descriptors.
+
+#     Raises:
+#         AssertionError: If debug is True but output_directory is not provided.
+
+#     """
+#     input_image, reference_image = images
+#     descriptors = np.zeros(
+#         (input_image.shape[0], input_image.shape[1], window_size * window_size)
+#     )
+#     diff_image = cv2.absdiff(input_image, reference_image)
+#     diff_image = cv2.cvtColor(diff_image, cv2.COLOR_BGR2GRAY)
+
+#     if debug:
+#         assert output_directory is not None, "Output directory must be provided"
+#         cv2.imwrite(os.path.join(output_directory, "diff.jpg"), diff_image)
+
+#     diff_image = np.pad(
+#         diff_image,
+#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
+#         "constant",
+#     )  # default is 0
+
+#     for i in range(input_image.shape[0]):
+#         for j in range(input_image.shape[1]):
+#             descriptors[i, j, :] = diff_image[i : i + window_size, j : j + window_size].ravel()
+
+#     descriptors_gray_diff = descriptors.reshape(
+#         (descriptors.shape[0] * descriptors.shape[1], descriptors.shape[2])
+#     )
+
+#     #################################################   3-channels-diff (abs)
+
+#     descriptors = np.zeros(
+#         (input_image.shape[0], input_image.shape[1], window_size * window_size * 3)
+#     )
+#     diff_image_r = cv2.absdiff(input_image[:, :, 0], reference_image[:, :, 0])
+#     diff_image_g = cv2.absdiff(input_image[:, :, 1], reference_image[:, :, 1])
+#     diff_image_b = cv2.absdiff(input_image[:, :, 2], reference_image[:, :, 2])
+
+#     if debug:
+#         assert output_directory is not None, "Output directory must be provided"
+#         cv2.imwrite(
+#             os.path.join(output_directory, "final_diff.jpg"),
+#             cv2.absdiff(input_image, reference_image),
+#         )
+#         cv2.imwrite(os.path.join(output_directory, "final_diff_r.jpg"), diff_image_r)
+#         cv2.imwrite(os.path.join(output_directory, "final_diff_g.jpg"), diff_image_g)
+#         cv2.imwrite(os.path.join(output_directory, "final_diff_b.jpg"), diff_image_b)
+
+#     diff_image_r = np.pad(
+#         diff_image_r,
+#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
+#         "constant",
+#     )  # default is 0
+#     diff_image_g = np.pad(
+#         diff_image_g,
+#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
+#         "constant",
+#     )  # default is 0
+#     diff_image_b = np.pad(
+#         diff_image_b,
+#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
+#         "constant",
+#     )  # default is 0
+
+#     for i in range(input_image.shape[0]):
+#         for j in range(input_image.shape[1]):
+#             feature_r = diff_image_r[i : i + window_size, j : j + window_size].ravel()
+#             feature_g = diff_image_g[i : i + window_size, j : j + window_size].ravel()
+#             feature_b = diff_image_b[i : i + window_size, j : j + window_size].ravel()
+#             descriptors[i, j, :] = np.concatenate((feature_r, feature_g, feature_b))
+#     descriptors_rgb_diff = descriptors.reshape(
+#         (descriptors.shape[0] * descriptors.shape[1], descriptors.shape[2])
+#     )
+
+#     #################################################   concatination
+
+#     shape = input_image.shape[::-1][1:]  # I have no idea why its flipped like this
+#     descriptors_gray_diff = descriptors_to_pca(
+#         descriptors_gray_diff, pca_dim_gray, window_size, shape
+#     )
+#     descriptors_colored_diff = descriptors_to_pca(
+#         descriptors_rgb_diff, pca_dim_rgb, window_size, shape
+#     )
+
+#     descriptors = np.concatenate(
+#         (descriptors_gray_diff, descriptors_colored_diff), axis=1
+#     )
+
+#     return descriptors
+
+
 def get_descriptors(
     images,
     window_size,
@@ -271,50 +385,32 @@ def get_descriptors(
     debug=False,
     output_directory=None,
 ):
-    """
-    Compute descriptors for change detection between input_image and reference_image.
-
-    Args:
-        images (tuple): A tuple containing the input image and reference image as numpy arrays.
-        window_size (int): The size of the sliding window.
-        pca_dim_gray (int): The number of principal components to keep for grayscale difference.
-        pca_dim_rgb (int): The number of principal components to keep for RGB difference.
-        debug (bool, optional): Whether to save debug images. Defaults to False.
-        output_directory (str, optional): The directory to save debug images. Defaults to None.
-
-    Returns:
-        numpy.ndarray: The computed descriptors.
-
-    Raises:
-        AssertionError: If debug is True but output_directory is not provided.
-
-    """
     input_image, reference_image = images
-    descriptors = np.zeros(
-        (input_image.shape[0], input_image.shape[1], window_size * window_size)
+
+    diff_image_gray = cv2.cvtColor(
+        cv2.absdiff(input_image, reference_image), cv2.COLOR_BGR2GRAY
     )
-    diff_image = cv2.absdiff(input_image, reference_image)
-    diff_image = cv2.cvtColor(diff_image, cv2.COLOR_BGR2GRAY)
-    cv2.imwrite(os.path.join(output_directory, "diff.jpg"), diff_image)
-    diff_image = np.pad(
-        diff_image,
+
+    if debug:
+        assert output_directory is not None, "Output directory must be provided"
+        cv2.imwrite(os.path.join(output_directory, "diff.jpg"), diff_image_gray)
+
+    # Padding for windowing
+    padded_diff_gray = np.pad(
+        diff_image_gray,
         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-        "constant",
-    )  # default is 0
-    for i in range(input_image.shape[0]):
-        for j in range(input_image.shape[1]):
-            descriptors[i, j, :] = diff_image[
-                i : i + window_size, j : j + window_size
-            ].ravel()
-    descriptors_gray_diff = descriptors.reshape(
-        (descriptors.shape[0] * descriptors.shape[1], descriptors.shape[2])
+        mode="constant",
     )
 
-    #################################################   3-channels-diff (abs)
-
-    descriptors = np.zeros(
-        (input_image.shape[0], input_image.shape[1], window_size * window_size * 3)
+    # Sliding window for gray
+    shape = (input_image.shape[0], input_image.shape[1], window_size, window_size)
+    strides = padded_diff_gray.strides * 2
+    windows_gray = np.lib.stride_tricks.as_strided(
+        padded_diff_gray, shape=shape, strides=strides
     )
+    descriptors_gray_diff = windows_gray.reshape(-1, window_size * window_size)
+
+    # 3-channel RGB differences
     diff_image_r = cv2.absdiff(input_image[:, :, 0], reference_image[:, :, 0])
     diff_image_g = cv2.absdiff(input_image[:, :, 1], reference_image[:, :, 1])
     diff_image_b = cv2.absdiff(input_image[:, :, 2], reference_image[:, :, 2])
@@ -329,45 +425,54 @@ def get_descriptors(
         cv2.imwrite(os.path.join(output_directory, "final_diff_g.jpg"), diff_image_g)
         cv2.imwrite(os.path.join(output_directory, "final_diff_b.jpg"), diff_image_b)
 
-    diff_image_r = np.pad(
+    # Padding for windowing RGB
+    padded_diff_r = np.pad(
         diff_image_r,
         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-        "constant",
-    )  # default is 0
-    diff_image_g = np.pad(
+        mode="constant",
+    )
+    padded_diff_g = np.pad(
         diff_image_g,
         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-        "constant",
-    )  # default is 0
-    diff_image_b = np.pad(
+        mode="constant",
+    )
+    padded_diff_b = np.pad(
         diff_image_b,
         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-        "constant",
-    )  # default is 0
-
-    for i in range(input_image.shape[0]):
-        for j in range(input_image.shape[1]):
-            feature_r = diff_image_r[i : i + window_size, j : j + window_size].ravel()
-            feature_g = diff_image_g[i : i + window_size, j : j + window_size].ravel()
-            feature_b = diff_image_b[i : i + window_size, j : j + window_size].ravel()
-            descriptors[i, j, :] = np.concatenate((feature_r, feature_g, feature_b))
-    descriptors_rgb_diff = descriptors.reshape(
-        (descriptors.shape[0] * descriptors.shape[1], descriptors.shape[2])
+        mode="constant",
     )
 
-    #################################################   concatination
+    # Sliding window for RGB
+    windows_r = np.lib.stride_tricks.as_strided(
+        padded_diff_r, shape=shape, strides=strides
+    )
+    windows_g = np.lib.stride_tricks.as_strided(
+        padded_diff_g, shape=shape, strides=strides
+    )
+    windows_b = np.lib.stride_tricks.as_strided(
+        padded_diff_b, shape=shape, strides=strides
+    )
 
-    shape = input_image.shape[::-1][1:]  # I have no idea why its flipped like this
+    descriptors_rgb_diff = np.concatenate(
+        [
+            windows_r.reshape(-1, window_size * window_size),
+            windows_g.reshape(-1, window_size * window_size),
+            windows_b.reshape(-1, window_size * window_size),
+        ],
+        axis=1,
+    )
+
+    # PCA on descriptors
+    shape = input_image.shape[::-1][1:]  # shape = (height, width)
     descriptors_gray_diff = descriptors_to_pca(
         descriptors_gray_diff, pca_dim_gray, window_size, shape
     )
-    descriptors_colored_diff = descriptors_to_pca(
+    descriptors_rgb_diff = descriptors_to_pca(
         descriptors_rgb_diff, pca_dim_rgb, window_size, shape
     )
 
-    descriptors = np.concatenate(
-        (descriptors_gray_diff, descriptors_colored_diff), axis=1
-    )
+    # Concatenate grayscale and RGB PCA results
+    descriptors = np.concatenate((descriptors_gray_diff, descriptors_rgb_diff), axis=-1)
 
     return descriptors
 
@@ -392,7 +497,6 @@ def k_means_clustering(FVS, components, image_shape):
     return change_map
 
 
-# calculates the mse value for each cluster of change_map
 def clustering_to_mse_values(change_map, input_image, reference_image, n):
     """
     Calculates the Mean Squared Error (MSE) values for each cluster in the change map.
@@ -408,17 +512,124 @@ def clustering_to_mse_values(change_map, input_image, reference_image, n):
             - A list of MSE values for each cluster normalized by the maximum possible MSE (255^2).
             - A list of the number of pixels in each cluster.
     """
-    mse = [0.0 for i in range(0, n)]
-    size = [0 for i in range(0, n)]
+    # Ensure the images are in integer format for calculations
     input_image = input_image.astype(int)
     reference_image = reference_image.astype(int)
-    for i in range(change_map.shape[0]):
-        for j in range(change_map.shape[1]):
-            mse[change_map[i, j]] += np.mean(
-                (input_image[i, j] - reference_image[i, j]) ** 2
-            )
-            size[change_map[i, j]] += 1
-    return [(mse[k] / (255**2)) / size[k] for k in range(0, n)], size
+
+    # Compute the squared differences
+    squared_diff = np.mean((input_image - reference_image) ** 2, axis=-1)
+
+    # Initialize arrays to store MSE and size for each cluster
+    mse = np.zeros(n, dtype=float)
+    size = np.zeros(n, dtype=int)
+
+    # Compute the MSE and size for each cluster
+    for k in range(n):
+        mask = change_map == k
+        size[k] = np.sum(mask)
+        if size[k] > 0:
+            mse[k] = np.sum(squared_diff[mask])
+
+    # Normalize MSE values by the number of pixels and the maximum possible MSE (255^2)
+    normalized_mse = (mse / size) / (255**2)
+
+    return normalized_mse.tolist(), size.tolist()
+
+
+# def compute_change_map(
+#     images,
+#     output_directory,
+#     window_size,
+#     clusters,
+#     pca_dim_gray,
+#     pca_dim_rgb,
+#     debug=False,
+# ):
+#     """
+#     Computes the change map for a pair of input images.
+
+#     Args:
+#         images (tuple): A tuple containing the input image and the reference image.
+#         output_directory (str): The directory where the output files will be saved.
+#         window_size (int): The size of the sliding window used for feature extraction.
+#         clusters (int): The number of clusters for k-means clustering.
+#         pca_dim_gray (int): The number of dimensions to reduce the gray channel to using PCA.
+#         pca_dim_rgb (int): The number of dimensions to reduce the RGB channels to using PCA.
+#         debug (bool, optional): Whether to enable debug mode. Defaults to False.
+
+#     Returns:
+#         tuple: A tuple containing the change map, the mean squared error (MSE) array, and the size array.
+#     """
+#     start_time = time.time()
+#     input_image, reference_image = images
+#     descriptors = get_descriptors(
+#         images,
+#         window_size,
+#         pca_dim_gray,
+#         pca_dim_rgb,
+#         debug=debug,
+#         output_directory=output_directory,
+#     )
+#     print("--- Feature extraction time - %s seconds ---" % (time.time() - start_time))
+#     # Now we are ready for clustering!
+#     change_map = k_means_clustering(descriptors, clusters, input_image.shape)
+#     print("--- K-means clustering time - %s seconds ---" % (time.time() - start_time))
+#     mse_array, size_array = clustering_to_mse_values(
+#         change_map, input_image, reference_image, clusters
+#     )
+#     print("--- MSE calculation time - %s seconds ---" % (time.time() - start_time))
+#     sorted_indexes = np.argsort(mse_array)
+#     colors_array = [
+#         plt.cm.jet(
+#             float(np.argwhere(sorted_indexes == class_).flatten()[0]) / (clusters - 1)
+#         )
+#         for class_ in range(clusters)
+#     ]
+#     colored_change_map = np.zeros(
+#         (change_map.shape[0], change_map.shape[1], 3), np.uint8
+#     )
+#     palette_colored_change_map = np.zeros(
+#         (change_map.shape[0], change_map.shape[1], 3), np.uint8
+#     )
+#     palette = sns.color_palette("Paired", clusters)
+#     for i in range(change_map.shape[0]):
+#         for j in range(change_map.shape[1]):
+#             colored_change_map[i, j] = (
+#                 255 * colors_array[change_map[i, j]][0],
+#                 255 * colors_array[change_map[i, j]][1],
+#                 255 * colors_array[change_map[i, j]][2],
+#             )
+#             palette_colored_change_map[i, j] = [
+#                 255 * palette[change_map[i, j]][0],
+#                 255 * palette[change_map[i, j]][1],
+#                 255 * palette[change_map[i, j]][2],
+#             ]
+
+#     if debug:
+#         assert output_directory is not None, "Output directory must be provided"
+#         cv2.imwrite(
+#             os.path.join(
+#                 output_directory,
+#                 f"window_size_{window_size}_pca_dim_gray{pca_dim_gray}_pca_dim_rgb{pca_dim_rgb}_clusters_{clusters}.jpg",
+#             ),
+#             colored_change_map,
+#         )
+#         cv2.imwrite(
+#             os.path.join(
+#                 output_directory,
+#                 f"PALETTE_window_size_{window_size}_pca_dim_gray{pca_dim_gray}_pca_dim_rgb{pca_dim_rgb}_clusters_{clusters}.jpg",
+#             ),
+#             palette_colored_change_map,
+#         )
+
+#     # Saving Output for later evaluation
+#     np.savetxt(
+#         os.path.join(output_directory, "clustering_data.csv"),
+#         change_map,
+#         delimiter=",",
+#     )
+#     print("--- Function End - %s seconds ---" % (time.time() - start_time))
+#     return change_map, mse_array, size_array
 
 
 def compute_change_map(
@@ -455,40 +666,35 @@ def compute_change_map(
         debug=debug,
         output_directory=output_directory,
     )
-    print("--- Feature extraction time - %s seconds ---" % (time.time() - start_time))
     # Now we are ready for clustering!
     change_map = k_means_clustering(descriptors, clusters, input_image.shape)
     print("--- K-means clustering time - %s seconds ---" % (time.time() - start_time))
     mse_array, size_array = clustering_to_mse_values(
         change_map, input_image, reference_image, clusters
     )
-    print("--- MSE calculation time - %s seconds ---" % (time.time() - start_time))
-    sorted_indexes = np.argsort(mse_array)
-    colors_array = [
-        plt.cm.jet(
-            float(np.argwhere(sorted_indexes == class_).flatten()[0]) / (clusters - 1)
-        )
-        for class_ in range(clusters)
-    ]
-    colored_change_map = np.zeros(
-        (change_map.shape[0], change_map.shape[1], 3), np.uint8
+
+    colormap = mcolors.LinearSegmentedColormap.from_list(
+        "custom_jet", plt.cm.jet(np.linspace(0, 1, clusters))
     )
-    palette_colored_change_map = np.zeros(
-        (change_map.shape[0], change_map.shape[1], 3), np.uint8
-    )
+    colors_array = (
+        colormap(np.linspace(0, 1, clusters))[:, :3] * 255
+    )  # Convert to RGB values
+
     palette = sns.color_palette("Paired", clusters)
-    for i in range(change_map.shape[0]):
-        for j in range(change_map.shape[1]):
-            colored_change_map[i, j] = (
-                255 * colors_array[change_map[i, j]][0],
-                255 * colors_array[change_map[i, j]][1],
-                255 * colors_array[change_map[i, j]][2],
-            )
-            palette_colored_change_map[i, j] = [
-                255 * palette[change_map[i, j]][0],
-                255 * palette[change_map[i, j]][1],
-                255 * palette[change_map[i, j]][2],
-            ]
+    palette = np.array(palette) * 255  # Convert to RGB values
+
+    # Optimized loop
+    change_map_flat = change_map.ravel()
+    colored_change_map_flat = (
+        colors_array[change_map_flat]
+        .reshape(change_map.shape[0], change_map.shape[1], 3)
+        .astype(np.uint8)
+    )
+    palette_colored_change_map_flat = (
+        palette[change_map_flat]
+        .reshape(change_map.shape[0], change_map.shape[1], 3)
+        .astype(np.uint8)
+    )
 
     if debug:
         assert output_directory is not None, "Output directory must be provided"
@@ -497,14 +703,14 @@ def compute_change_map(
                 output_directory,
                 f"window_size_{window_size}_pca_dim_gray{pca_dim_gray}_pca_dim_rgb{pca_dim_rgb}_clusters_{clusters}.jpg",
             ),
-            colored_change_map,
+            colored_change_map_flat,
         )
         cv2.imwrite(
             os.path.join(
                 output_directory,
                 f"PALETTE_window_size_{window_size}_pca_dim_gray{pca_dim_gray}_pca_dim_rgb{pca_dim_rgb}_clusters_{clusters}.jpg",
             ),
-            palette_colored_change_map,
+            palette_colored_change_map_flat,
         )
 
     # Saving Output for later evaluation
@@ -513,7 +719,6 @@ def compute_change_map(
         change_map,
         delimiter=",",
     )
-    print("--- Function End - %s seconds ---" % (time.time() - start_time))
     return change_map, mse_array, size_array
 
 
@@ -541,19 +746,33 @@ def find_group_of_accepted_classes_DBSCAN(MSE_array, output_directory):
     if number_of_clusters == 1:
         print("No significant changes are detected.")
         exit(0)
+
     # print(clustering.labels_)
-    classes = [[] for i in range(number_of_clusters)]
-    centers = [0 for i in range(number_of_clusters)]
+    classes = [[] for _ in range(number_of_clusters)]
+    centers = np.zeros(number_of_clusters)
+
+    np.add.at(centers, clustering.labels_, MSE_array)
+
     for i in range(len(MSE_array)):
-        centers[clustering.labels_[i]] += MSE_array[i]
         classes[clustering.labels_[i]].append(i)
 
-    centers = [centers[i] / len(classes[i]) for i in range(number_of_clusters)]
-    min_class = centers.index(min(centers))
-    accepted_classes = []
-    for i in range(len(MSE_array)):
-        if clustering.labels_[i] != min_class:
-            accepted_classes.append(i)
+    centers /= np.array([len(c) for c in classes])
+
+    min_class = np.argmin(centers)
+    accepted_classes = np.where(clustering.labels_ != min_class)[0]
+
+    # for i in range(len(MSE_array)):
+    #     centers[clustering.labels_[i]] += MSE_array[i]
+    #     classes[clustering.labels_[i]].append(i)
+
+    # centers = [centers[i] / len(classes[i]) for i in range(number_of_clusters)]
+    # min_class = centers.index(min(centers))
+    # accepted_classes = []
+    # for i in range(len(MSE_array)):
+    #     if clustering.labels_[i] != min_class:
+    #         accepted_classes.append(i)
+
+
     plt.figure()
     plt.xlabel("Index")
     plt.ylabel("MSE")
@@ -648,8 +867,8 @@ def detect_changes(
     for i in range(clustering_map.shape[0]):
         for j in range(clustering_map.shape[1]):
             clustering[int(clustering_map[i, j])].append([i, j])
-    input_image_copy = input_image.copy()
-    b_channel, g_channel, r_channel = cv2.split(input_image_copy)
+
+    b_channel, g_channel, r_channel = cv2.split(input_image)
     alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 255
     alpha_channel[:, :] = output_alpha
     groups = find_group_of_accepted_classes_DBSCAN(mse_array, output_directory)
