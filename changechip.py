@@ -264,119 +264,6 @@ def descriptors_to_pca(descriptors, pca_target_dim, window_size, shape):
     return FVS
 
 
-# def get_descriptors(
-#     images,
-#     window_size,
-#     pca_dim_gray,
-#     pca_dim_rgb,
-#     debug=False,
-#     output_directory=None,
-# ):
-#     """
-#     Compute descriptors for change detection between input_image and reference_image.
-
-#     Args:
-#         images (tuple): A tuple containing the input image and reference image as numpy arrays.
-#         window_size (int): The size of the sliding window.
-#         pca_dim_gray (int): The number of principal components to keep for grayscale difference.
-#         pca_dim_rgb (int): The number of principal components to keep for RGB difference.
-#         debug (bool, optional): Whether to save debug images. Defaults to False.
-#         output_directory (str, optional): The directory to save debug images. Defaults to None.
-
-#     Returns:
-#         numpy.ndarray: The computed descriptors.
-
-#     Raises:
-#         AssertionError: If debug is True but output_directory is not provided.
-
-#     """
-#     input_image, reference_image = images
-#     descriptors = np.zeros(
-#         (input_image.shape[0], input_image.shape[1], window_size * window_size)
-#     )
-#     diff_image = cv2.absdiff(input_image, reference_image)
-#     diff_image = cv2.cvtColor(diff_image, cv2.COLOR_BGR2GRAY)
-
-#     if debug:
-#         assert output_directory is not None, "Output directory must be provided"
-#         cv2.imwrite(os.path.join(output_directory, "diff.jpg"), diff_image)
-
-#     diff_image = np.pad(
-#         diff_image,
-#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-#         "constant",
-#     )  # default is 0
-
-#     for i in range(input_image.shape[0]):
-#         for j in range(input_image.shape[1]):
-#             descriptors[i, j, :] = diff_image[i : i + window_size, j : j + window_size].ravel()
-
-#     descriptors_gray_diff = descriptors.reshape(
-#         (descriptors.shape[0] * descriptors.shape[1], descriptors.shape[2])
-#     )
-
-#     #################################################   3-channels-diff (abs)
-
-#     descriptors = np.zeros(
-#         (input_image.shape[0], input_image.shape[1], window_size * window_size * 3)
-#     )
-#     diff_image_r = cv2.absdiff(input_image[:, :, 0], reference_image[:, :, 0])
-#     diff_image_g = cv2.absdiff(input_image[:, :, 1], reference_image[:, :, 1])
-#     diff_image_b = cv2.absdiff(input_image[:, :, 2], reference_image[:, :, 2])
-
-#     if debug:
-#         assert output_directory is not None, "Output directory must be provided"
-#         cv2.imwrite(
-#             os.path.join(output_directory, "final_diff.jpg"),
-#             cv2.absdiff(input_image, reference_image),
-#         )
-#         cv2.imwrite(os.path.join(output_directory, "final_diff_r.jpg"), diff_image_r)
-#         cv2.imwrite(os.path.join(output_directory, "final_diff_g.jpg"), diff_image_g)
-#         cv2.imwrite(os.path.join(output_directory, "final_diff_b.jpg"), diff_image_b)
-
-#     diff_image_r = np.pad(
-#         diff_image_r,
-#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-#         "constant",
-#     )  # default is 0
-#     diff_image_g = np.pad(
-#         diff_image_g,
-#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-#         "constant",
-#     )  # default is 0
-#     diff_image_b = np.pad(
-#         diff_image_b,
-#         ((window_size // 2, window_size // 2), (window_size // 2, window_size // 2)),
-#         "constant",
-#     )  # default is 0
-
-#     for i in range(input_image.shape[0]):
-#         for j in range(input_image.shape[1]):
-#             feature_r = diff_image_r[i : i + window_size, j : j + window_size].ravel()
-#             feature_g = diff_image_g[i : i + window_size, j : j + window_size].ravel()
-#             feature_b = diff_image_b[i : i + window_size, j : j + window_size].ravel()
-#             descriptors[i, j, :] = np.concatenate((feature_r, feature_g, feature_b))
-#     descriptors_rgb_diff = descriptors.reshape(
-#         (descriptors.shape[0] * descriptors.shape[1], descriptors.shape[2])
-#     )
-
-#     #################################################   concatination
-
-#     shape = input_image.shape[::-1][1:]  # I have no idea why its flipped like this
-#     descriptors_gray_diff = descriptors_to_pca(
-#         descriptors_gray_diff, pca_dim_gray, window_size, shape
-#     )
-#     descriptors_colored_diff = descriptors_to_pca(
-#         descriptors_rgb_diff, pca_dim_rgb, window_size, shape
-#     )
-
-#     descriptors = np.concatenate(
-#         (descriptors_gray_diff, descriptors_colored_diff), axis=1
-#     )
-
-#     return descriptors
-
-
 def get_descriptors(
     images,
     window_size,
@@ -664,17 +551,6 @@ def find_group_of_accepted_classes_DBSCAN(MSE_array, output_directory):
 
     min_class = np.argmin(centers)
     accepted_classes = np.where(clustering.labels_ != min_class)[0]
-
-    # for i in range(len(MSE_array)):
-    #     centers[clustering.labels_[i]] += MSE_array[i]
-    #     classes[clustering.labels_[i]].append(i)
-
-    # centers = [centers[i] / len(classes[i]) for i in range(number_of_clusters)]
-    # min_class = centers.index(min(centers))
-    # accepted_classes = []
-    # for i in range(len(MSE_array)):
-    #     if clustering.labels_[i] != min_class:
-    #         accepted_classes.append(i)
 
     plt.figure()
     plt.xlabel("Index")
