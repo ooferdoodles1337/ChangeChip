@@ -1,27 +1,17 @@
 import gradio as gr
 from changechip import *
 
-def foo(input1, input2):
-    print(type(input1))
 
-    return None
+def process(input_image, reference_image, resize_factor):
+    return pipeline((input_image, reference_image), resize_factor=resize_factor)
 
 
-with gr.Blocks() as demo:
-    with gr.Row():
-        text1 = gr.Textbox(label="t1")
-        slider2 = gr.Textbox(label="s2")
-        drop3 = gr.Dropdown(["a", "b", "c"], label="d3")
-    with gr.Row():
-        with gr.Column(scale=1, min_width=600):
-            text1 = gr.Textbox(label="prompt 1")
-            text2 = gr.Textbox(label="prompt 2")
-            inbtw = gr.Button("Between")
-            text4 = gr.Textbox(label="prompt 1")
-            text5 = gr.Textbox(label="prompt 2")
-        with gr.Column(scale=2, min_width=600):
-            img1 = gr.Image("images/cheetah.jpg")
-            btn = gr.Button("Go")
+demo = gr.Interface(
+    fn=process,
+    inputs=["image", "image", gr.Slider(0.1, 1, 0.5, step=0.1)],
+    outputs=["image"],
+    title="ChangeChip",
+)
 
 
 if __name__ == "__main__":
