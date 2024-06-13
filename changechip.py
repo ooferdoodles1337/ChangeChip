@@ -192,20 +192,13 @@ def find_vector_set(descriptors, jump_size, shape):
     """
     Find the vector set from the given descriptors.
 
-    Parameters:
-    - descriptors: numpy.ndarray
-        The input descriptors array.
-    - jump_size: int
-        The jump size for sampling the descriptors.
-    - shape: tuple
-        The shape of the descriptors array.
+    Args:
+        descriptors (numpy.ndarray): The input descriptors.
+        jump_size (int): The jump size for sampling the descriptors.
+        shape (tuple): The shape of the descriptors.
 
     Returns:
-    - vector_set: numpy.ndarray
-        The vector set obtained from the descriptors.
-    - mean_vec: numpy.ndarray
-        The mean vector of the vector set.
-
+        tuple: A tuple containing the vector set and the mean vector.
     """
     size_0, size_1 = shape
     descriptors_2d = descriptors.reshape((size_0, size_1, descriptors.shape[1]))
@@ -403,19 +396,19 @@ def k_means_clustering(FVS, components, image_shape):
 
 def clustering_to_mse_values(change_map, input_image, reference_image, n):
     """
-    Calculates the Mean Squared Error (MSE) values for each cluster in the change map.
+    Compute the normalized mean squared error (MSE) values for each cluster in a change map.
 
     Args:
-        change_map (numpy.ndarray): The change map indicating the cluster labels for each pixel.
-        input_image (numpy.ndarray): The input image.
-        reference_image (numpy.ndarray): The reference image.
-        n (int): The number of clusters.
+        change_map (numpy.ndarray): Array representing the cluster labels for each pixel in the change map.
+        input_image (numpy.ndarray): Array representing the input image.
+        reference_image (numpy.ndarray): Array representing the reference image.
+        n (int): Number of clusters.
 
     Returns:
-        tuple: A tuple containing two lists:
-            - A list of MSE values for each cluster normalized by the maximum possible MSE (255^2).
-            - A list of the number of pixels in each cluster.
+        list: Normalized MSE values for each cluster.
+
     """
+
     # Ensure the images are in integer format for calculations
     input_image = input_image.astype(int)
     reference_image = reference_image.astype(int)
@@ -437,7 +430,7 @@ def clustering_to_mse_values(change_map, input_image, reference_image, n):
     # Normalize MSE values by the number of pixels and the maximum possible MSE (255^2)
     normalized_mse = (mse / size) / (255**2)
 
-    return normalized_mse.tolist(), size.tolist()
+    return normalized_mse.tolist()
 
 
 def compute_change_map(
@@ -450,21 +443,24 @@ def compute_change_map(
     output_directory=None,
 ):
     """
-    Computes the change map for a pair of input images.
+    Compute the change map and mean squared error (MSE) array for a pair of input and reference images.
 
     Args:
-        images (tuple): A tuple containing the input image and the reference image.
-        output_directory (str): The directory where the output files will be saved.
-        window_size (int): The size of the sliding window used for feature extraction.
+        images (tuple): A tuple containing the input and reference images.
+        window_size (int): The size of the sliding window for feature extraction.
         clusters (int): The number of clusters for k-means clustering.
-        pca_dim_gray (int): The number of dimensions to reduce the gray channel to using PCA.
-        pca_dim_rgb (int): The number of dimensions to reduce the RGB channels to using PCA.
+        pca_dim_gray (int): The number of dimensions to reduce to for grayscale images.
+        pca_dim_rgb (int): The number of dimensions to reduce to for RGB images.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
+        output_directory (str, optional): The directory to save the output files. Required if debug mode is enabled.
 
     Returns:
-        tuple: A tuple containing the change map, the mean squared error (MSE) array, and the size array.
+        tuple: A tuple containing the change map and MSE array.
+
+    Raises:
+        AssertionError: If debug mode is enabled but output_directory is not provided.
+
     """
-    start_time = time.time()
     input_image, reference_image = images
     descriptors = get_descriptors(
         images,
@@ -476,8 +472,7 @@ def compute_change_map(
     )
     # Now we are ready for clustering!
     change_map = k_means_clustering(descriptors, clusters, input_image.shape)
-    print("--- K-means clustering time - %s seconds ---" % (time.time() - start_time))
-    mse_array, size_array = clustering_to_mse_values(
+    mse_array = clustering_to_mse_values(
         change_map, input_image, reference_image, clusters
     )
 
@@ -521,7 +516,7 @@ def compute_change_map(
             palette_colored_change_map_flat,
         )
 
-    if debug: 
+    if debug:
         assert output_directory is not None, "Output directory must be provided"
         # Saving Output for later evaluation
         np.savetxt(
@@ -529,13 +524,15 @@ def compute_change_map(
             change_map,
             delimiter=",",
         )
-    return change_map, mse_array, size_array
+    return change_map, mse_array
 
 
 # selects the classes to be shown to the user as 'changes'.
 # this selection is done by an MSE heuristic using DBSCAN clustering, to seperate the highest mse-valued classes from the others.
 # the eps density parameter of DBSCAN might differ from system to system
-def find_group_of_accepted_classes_DBSCAN(MSE_array, debug=False, output_directory=None):
+def find_group_of_accepted_classes_DBSCAN(
+    MSE_array, debug=False, output_directory=None
+):
     """
     Finds the group of accepted classes using the DBSCAN algorithm.
 
@@ -546,10 +543,6 @@ def find_group_of_accepted_classes_DBSCAN(MSE_array, debug=False, output_directo
 
     Returns:
     - accepted_classes (list): A list of indices of the accepted classes.
-
-    Raises:
-    - None
-
     """
 
     clustering = DBSCAN(eps=0.02, min_samples=1).fit(np.array(MSE_array).reshape(-1, 1))
@@ -638,24 +631,25 @@ def detect_changes(
     output_directory=None,
 ):
     """
-    Detects changes between two images using PCA-Kmeans clustering and post-processing and outputs results to output_directory.
+    Detects changes between two images using a combination of clustering and image processing techniques.
 
     Args:
-        images (tuple): A tuple containing the input image and the reference image.
-        output_directory (str): The directory where the output image will be saved.
-        output_alpha (int): The alpha value for the output image transparency.
+        images (tuple): A tuple containing two input images.
+        output_alpha (int): The alpha value for the output image.
         window_size (int): The size of the sliding window used for computing change map.
-        clusters (int): The number of clusters for PCA-Kmeans clustering.
-        pca_dim_gray (int): The number of dimensions to reduce to for grayscale images.
-        pca_dim_rgb (int): The number of dimensions to reduce to for RGB images.
+        clusters (int): The number of clusters used for clustering pixels.
+        pca_dim_gray (int): The number of dimensions to reduce the grayscale image to using PCA.
+        pca_dim_rgb (int): The number of dimensions to reduce the RGB image to using PCA.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
+        output_directory (str, optional): The output directory for saving intermediate results. Defaults to None.
 
     Returns:
-        result (numpy.ndarray): The output image with detected changes.
+        numpy.ndarray: The resulting image with detected changes.
+
     """
     start_time = time.time()
     input_image, _ = images
-    clustering_map, mse_array, _ = compute_change_map(
+    clustering_map, mse_array = compute_change_map(
         images,
         window_size=window_size,
         clusters=clusters,
@@ -665,10 +659,14 @@ def detect_changes(
         output_directory=output_directory,
     )
 
-    clustering = [[] for _ in range(clusters)]
-    for i in range(clustering_map.shape[0]):
-        for j in range(clustering_map.shape[1]):
-            clustering[int(clustering_map[i, j])].append([i, j])
+    clustering = [np.empty((0, 2), dtype=int) for _ in range(clusters)]
+
+    # Get the indices of each element in the clustering_map
+    indices = np.indices(clustering_map.shape).transpose(1, 2, 0).reshape(-1, 2)
+    flattened_map = clustering_map.flatten()
+
+    for cluster_idx in range(clusters):
+        clustering[cluster_idx] = indices[flattened_map == cluster_idx]
 
     b_channel, g_channel, r_channel = cv2.split(input_image)
     alpha_channel = np.ones(b_channel.shape, dtype=b_channel.dtype) * 255
@@ -699,21 +697,21 @@ def pipeline(
     output_directory=None,
 ):
     """
-    Process a series of images to detect changes and generate an output image.
+    Applies a pipeline of image processing steps to detect changes in a sequence of images.
 
     Args:
-        images (list): A list of input images to process.
-        output_directory (str, optional): The directory to save the output image. Defaults to "output".
+        images (tuple): A list of input images.
         resize_factor (float, optional): The factor by which to resize the images. Defaults to 1.0.
-        output_alpha (int, optional): The alpha value for the output image. Defaults to 50.
+        output_alpha (int, optional): The alpha value for the output images. Defaults to 50.
         window_size (int, optional): The size of the sliding window for change detection. Defaults to 5.
         clusters (int, optional): The number of clusters for color quantization. Defaults to 16.
         pca_dim_gray (int, optional): The number of dimensions to keep for grayscale PCA. Defaults to 3.
         pca_dim_rgb (int, optional): The number of dimensions to keep for RGB PCA. Defaults to 9.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
+        output_directory (str, optional): The directory to save the output images. Defaults to None.
 
     Returns:
-        numpy.ndarray: The output image.
+        numpy.ndarray: The resulting image with detected changes.
     """
     if output_directory:
         os.makedirs(output_directory, exist_ok=True)
@@ -732,7 +730,7 @@ def pipeline(
         pca_dim_gray=pca_dim_gray,
         pca_dim_rgb=pca_dim_rgb,
         debug=debug,
-        output_directory=output_directory
+        output_directory=output_directory,
     )
 
     return result
