@@ -61,8 +61,8 @@ def homography(images, debug=False, output_directory=None):
     input_image, reference_image = images
     # Initiate SIFT detector
     sift = cv2.SIFT_create()
-    # find the keypoints and descriptors with SIFT
 
+    # find the keypoints and descriptors with SIFT
     input_keypoints, input_descriptors = sift.detectAndCompute(input_image, None)
     reference_keypoints, reference_descriptors = sift.detectAndCompute(
         reference_image, None
@@ -82,17 +82,19 @@ def homography(images, debug=False, output_directory=None):
     # cv.drawMatchesKnn expects list of lists as matches.
     if debug:
         assert output_directory is not None, "Output directory must be provided"
-        temp_image = cv2.drawMatchesKnn(
-            reference_image,
-            reference_keypoints,
-            input_image,
-            input_keypoints,
-            good_draw,
-            None,
-            flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
-        )
         os.makedirs(output_directory, exist_ok=True)
-        cv2.imwrite(os.path.join(output_directory, "matching.png"), temp_image)
+        cv2.imwrite(
+            os.path.join(output_directory, "matching.png"),
+            cv2.drawMatchesKnn(
+                reference_image,
+                reference_keypoints,
+                input_image,
+                input_keypoints,
+                good_draw,
+                None,
+                flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS,
+            ),
+        )
 
     # Extract location of good matches
     reference_points = np.zeros((len(good_without_list), 2), dtype=np.float32)

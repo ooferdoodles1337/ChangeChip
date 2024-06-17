@@ -20,8 +20,9 @@ with gr.Blocks() as demo:
         
         with gr.Column():
             output_image = gr.Image(label="Output Image")
+            btn = gr.Button("Run")
     
-    btn = gr.Button("Run")
+    
     
     btn.click(fn=process, inputs=[input_image, reference_image, resize_factor, output_alpha], outputs=output_image)
 
