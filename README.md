@@ -11,30 +11,42 @@ The workflow of *ChangeChip* is presented as follows:
 
 ### Using Anaconda
 
-1. Create a conda environment with Python 3.11:
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/yourusername/changechip.git
+    cd changechip
+    ```
+
+2. Create a conda environment with Python 3.11:
     ```bash
     conda create --name changechip python=3.11
     conda activate changechip
     ```
 
-2. Install the required packages:
+3. Install the required packages:
     ```bash
     pip install -r requirements.txt
     ```
 
-3. Run the application:
+4. Run the application:
     ```bash
     python app.py
     ```
 
 ### Using Docker
 
-1. Build the Docker image:
+1. Clone the repository:
+    ```bash
+    git clone https://github.com/yourusername/changechip.git
+    cd changechip
+    ```
+
+2. Build the Docker image:
     ```bash
     docker build -t changechip .
     ```
 
-2. Run the Docker container:
+3. Run the Docker container:
     ```bash
     docker run -p 7680:7680 changechip
     ```
