@@ -48,10 +48,10 @@ The workflow of *ChangeChip* is presented as follows:
 
 3. Run the Docker container:
     ```bash
-    docker run -p 7680:7680 changechip
+    docker run -p 7860:7860 changechip
     ```
 
-Access the application at `localhost:7680`.
+Access the application at `localhost:7860`.
 
 ## CD-PCB Dataset
 
