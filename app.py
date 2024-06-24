@@ -17,7 +17,10 @@ def process(input_image, reference_image, resize_factor, output_alpha):
 with gr.Blocks() as demo:
     gr.Markdown("# ChangeChip")
     gr.Markdown(
-        'Please input a "golden sample" PCB image as the reference image and compare it to the input image to highlight any defects.'
+        """
+        Welcome to ChangeChip! This tool allows you to detect defects on printed circuit boards (PCBs) by comparing an input image with a reference "golden sample" image. 
+        Simply upload your images, adjust the settings if needed, and click "Run" to highlight any discrepancies.
+        """
     )
     with gr.Row():
         with gr.Column(scale=1):
