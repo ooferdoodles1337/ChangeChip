@@ -33,7 +33,7 @@ The workflow of *ChangeChip* is presented as follows:
     python app.py
     ```
 
-### Using Docker
+### Using Docker Compose
 
 1. Clone the repository:
     ```bash
@@ -41,14 +41,9 @@ The workflow of *ChangeChip* is presented as follows:
     cd changechip
     ```
 
-2. Build the Docker image:
-    ```bash
-    docker build -t changechip .
+2. Run the compose file
     ```
-
-3. Run the Docker container:
-    ```bash
-    docker run -p 7860:7860 changechip
+    docker compose up
     ```
 
 Access the application at `localhost:7860`.
