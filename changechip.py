@@ -16,19 +16,15 @@ import time
 def resize_images(images, resize_factor=1.0):
     """
     Resizes the input and reference images based on the average dimensions of the two images and a resize factor.
-
     Parameters:
     images (tuple): A tuple containing two images (input_image, reference_image). Both images should be numpy arrays.
     resize_factor (float): A factor by which to resize the images. Default is 1.0, which means the images will be resized to the average dimensions of the two images.
-
     Returns:
     tuple: A tuple containing the resized input and reference images.
-
     Example:
     >>> input_image = cv2.imread('input.jpg')
     >>> reference_image = cv2.imread('reference.jpg')
     >>> resized_images = resize_images((input_image, reference_image), resize_factor=0.5)
-
     """
     input_image, reference_image = images
     average_width = (input_image.shape[1] + reference_image.shape[1]) * 0.5
@@ -49,12 +45,10 @@ def resize_images(images, resize_factor=1.0):
 def homography(images, debug=False, output_directory=None):
     """
     Apply homography transformation to align two images.
-
     Args:
         images (tuple): A tuple containing two images, where the first image is the input image and the second image is the reference image.
         debug (bool, optional): If True, debug images will be generated. Defaults to False.
         output_directory (str, optional): The directory to save the debug images. Defaults to None.
-
     Returns:
         tuple: A tuple containing the aligned input image and the reference image.
     """
@@ -130,12 +124,10 @@ def homography(images, debug=False, output_directory=None):
 def histogram_matching(images, debug=False, output_directory=None):
     """
     Perform histogram matching between an input image and a reference image.
-
     Args:
         images (tuple): A tuple containing the input image and the reference image.
         debug (bool, optional): If True, save the histogram-matched image to the output directory. Defaults to False.
         output_directory (str, optional): The directory to save the histogram-matched image. Defaults to None.
-
     Returns:
         tuple: A tuple containing the input image and the histogram-matched reference image.
     """
@@ -161,16 +153,13 @@ def preprocess_images(images, resize_factor=1.0, debug=False, output_directory=N
     1. Resizes the images based on the given resize factor.
     2. Applies homography to align the resized images.
     3. Performs histogram matching on the aligned images.
-
     Args:
         images (tuple): A tuple containing the input image and the reference image.
         resize_factor (float, optional): The factor by which to resize the images. Defaults to 1.0.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
         output_directory (str, optional): The directory to save the output images. Defaults to None.
-
     Returns:
         tuple: The preprocessed images.
-
     Example:
         >>> images = (input_image, reference_image)
         >>> preprocess_images(images, resize_factor=0.5, debug=True, output_directory='output/')
@@ -193,12 +182,10 @@ def preprocess_images(images, resize_factor=1.0, debug=False, output_directory=N
 def find_vector_set(descriptors, jump_size, shape):
     """
     Find the vector set from the given descriptors.
-
     Args:
         descriptors (numpy.ndarray): The input descriptors.
         jump_size (int): The jump size for sampling the descriptors.
         shape (tuple): The shape of the descriptors.
-
     Returns:
         tuple: A tuple containing the vector set and the mean vector.
     """
@@ -219,15 +206,12 @@ def find_FVS(descriptors, EVS, mean_vec):
     """
     Calculate the feature vector space (FVS) by performing dot product of descriptors and EVS,
     and subtracting the mean vector from the result.
-
     Args:
         descriptors (numpy.ndarray): Array of descriptors.
         EVS (numpy.ndarray): Eigenvalue matrix.
         mean_vec (numpy.ndarray): Mean vector.
-
     Returns:
         numpy.ndarray: The calculated feature vector space (FVS).
-
     """
     FVS = np.dot(descriptors, EVS)
     FVS = FVS - mean_vec
@@ -240,13 +224,11 @@ def find_FVS(descriptors, EVS, mean_vec):
 def descriptors_to_pca(descriptors, pca_target_dim, window_size, shape):
     """
     Applies Principal Component Analysis (PCA) to a set of descriptors.
-
     Args:
         descriptors (list): List of descriptors.
         pca_target_dim (int): Target dimensionality for PCA.
         window_size (int): Size of the sliding window.
         shape (tuple): Shape of the descriptors.
-
     Returns:
         list: Feature vector set after applying PCA.
     """
@@ -269,7 +251,6 @@ def get_descriptors(
 ):
     """
     Compute descriptors for input images using sliding window technique and PCA.
-
     Args:
         images (tuple): A tuple containing the input image and reference image.
         window_size (int): The size of the sliding window.
@@ -277,10 +258,8 @@ def get_descriptors(
         pca_dim_rgb (int): The number of dimensions to keep for RGB PCA.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
         output_directory (str, optional): The directory to save debug images. Required if debug is True.
-
     Returns:
         numpy.ndarray: The computed descriptors.
-
     Raises:
         AssertionError: If debug is True but output_directory is not provided.
     """
@@ -379,15 +358,12 @@ def get_descriptors(
 def k_means_clustering(FVS, components, image_shape):
     """
     Perform K-means clustering on the given feature vectors.
-
     Args:
         FVS (array-like): The feature vectors to be clustered.
         components (int): The number of clusters (components) to create.
         image_shape (tuple): The size of the images used to reshape the change map.
-
     Returns:
         array-like: The change map obtained from the K-means clustering.
-
     """
     kmeans = KMeans(components, verbose=0)
     kmeans.fit(FVS)
@@ -399,16 +375,13 @@ def k_means_clustering(FVS, components, image_shape):
 def clustering_to_mse_values(change_map, input_image, reference_image, n):
     """
     Compute the normalized mean squared error (MSE) values for each cluster in a change map.
-
     Args:
         change_map (numpy.ndarray): Array representing the cluster labels for each pixel in the change map.
         input_image (numpy.ndarray): Array representing the input image.
         reference_image (numpy.ndarray): Array representing the reference image.
         n (int): Number of clusters.
-
     Returns:
         list: Normalized MSE values for each cluster.
-
     """
 
     # Ensure the images are in integer format for calculations
@@ -446,7 +419,6 @@ def compute_change_map(
 ):
     """
     Compute the change map and mean squared error (MSE) array for a pair of input and reference images.
-
     Args:
         images (tuple): A tuple containing the input and reference images.
         window_size (int): The size of the sliding window for feature extraction.
@@ -455,13 +427,10 @@ def compute_change_map(
         pca_dim_rgb (int): The number of dimensions to reduce to for RGB images.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
         output_directory (str, optional): The directory to save the output files. Required if debug mode is enabled.
-
     Returns:
         tuple: A tuple containing the change map and MSE array.
-
     Raises:
         AssertionError: If debug mode is enabled but output_directory is not provided.
-
     """
     input_image, reference_image = images
     descriptors = get_descriptors(
@@ -537,12 +506,10 @@ def find_group_of_accepted_classes_DBSCAN(
 ):
     """
     Finds the group of accepted classes using the DBSCAN algorithm.
-
     Parameters:
     - MSE_array (list): A list of mean squared error values.
     - debug (bool): Flag indicating whether to enable debug mode or not. Default is False.
     - output_directory (str): The directory where the output files will be saved. Default is None.
-
     Returns:
     - accepted_classes (list): A list of indices of the accepted classes.
     """
@@ -551,8 +518,7 @@ def find_group_of_accepted_classes_DBSCAN(
     number_of_clusters = len(set(clustering.labels_))
     if number_of_clusters == 1:
         print("No significant changes are detected.")
-        exit(0)
-
+        
     # print(clustering.labels_)
     classes = [[] for _ in range(number_of_clusters)]
     centers = np.zeros(number_of_clusters)
@@ -596,13 +562,11 @@ def draw_combination_on_transparent_input_image(
 ):
     """
     Draws a combination of classes on a transparent input image based on their mean squared error (MSE) order.
-
     Args:
         classes_mse (numpy.ndarray): Array of mean squared errors for each class.
         clustering (dict): Dictionary containing the clustering information for each class.
         combination (list): List of classes to be drawn on the image.
         transparent_input_image (numpy.ndarray): Transparent input image.
-
     Returns:
         numpy.ndarray: Transparent input image with the specified combination of classes drawn on it.
     """
@@ -634,7 +598,6 @@ def detect_changes(
 ):
     """
     Detects changes between two images using a combination of clustering and image processing techniques.
-
     Args:
         images (tuple): A tuple containing two input images.
         output_alpha (int): The alpha value for the output image.
@@ -644,10 +607,8 @@ def detect_changes(
         pca_dim_rgb (int): The number of dimensions to reduce the RGB image to using PCA.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
         output_directory (str, optional): The output directory for saving intermediate results. Defaults to None.
-
     Returns:
         numpy.ndarray: The resulting image with detected changes.
-
     """
     start_time = time.time()
     input_image, _ = images
@@ -700,7 +661,6 @@ def pipeline(
 ):
     """
     Applies a pipeline of image processing steps to detect changes in a sequence of images.
-
     Args:
         images (tuple): A list of input images.
         resize_factor (float, optional): The factor by which to resize the images. Defaults to 1.0.
@@ -711,7 +671,6 @@ def pipeline(
         pca_dim_rgb (int, optional): The number of dimensions to keep for RGB PCA. Defaults to 9.
         debug (bool, optional): Whether to enable debug mode. Defaults to False.
         output_directory (str, optional): The directory to save the output images. Defaults to None.
-
     Returns:
         numpy.ndarray: The resulting image with detected changes.
     """

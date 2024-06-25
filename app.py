@@ -1,16 +1,26 @@
-import os
 import gradio as gr
 
 from changechip import *
 
-app_port = os.getenv("APP_PORT", "7860")
 
-
-def process(input_image, reference_image, resize_factor, output_alpha):
+def process(
+    input_image,
+    reference_image,
+    resize_factor,
+    output_alpha,
+    window_size,
+    clusters,
+    pca_dim_gray,
+    pca_dim_rgb,
+):
     return pipeline(
         (input_image, reference_image),
         resize_factor=resize_factor,
         output_alpha=output_alpha,
+        window_size=window_size,
+        clusters=clusters,
+        pca_dim_gray=pca_dim_gray,
+        pca_dim_rgb=pca_dim_rgb,
     )
 
 
@@ -29,6 +39,10 @@ with gr.Blocks() as demo:
             with gr.Accordion(label="Other Options", open=False):
                 resize_factor = gr.Slider(0.1, 1, 0.5, step=0.1, label="Resize Factor")
                 output_alpha = gr.Slider(0, 255, 50, step=1, label="Output Alpha")
+                window_size = gr.Slider(0, 10, 5, step=1, label="Window Size")
+                clusters = gr.Slider(0, 32, 16, step=1, label="Clusters")
+                pca_dim_gray = gr.Slider(0, 9, 3, step=1, label="PCA Dim Gray")
+                pca_dim_rgb = gr.Slider(0, 27, 9, step=1, label="PCA Dim RGB")
 
         with gr.Column(scale=2):
             output_image = gr.Image(label="Output Image", scale=9)
@@ -36,7 +50,16 @@ with gr.Blocks() as demo:
 
     btn.click(
         fn=process,
-        inputs=[input_image, reference_image, resize_factor, output_alpha],
+        inputs=[
+            input_image,
+            reference_image,
+            resize_factor,
+            output_alpha,
+            window_size,
+            clusters,
+            pca_dim_gray,
+            pca_dim_rgb,
+        ],
         outputs=output_image,
     )
 
